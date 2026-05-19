@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Crown Melbourne — Kitchen Equipment Intelligence</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+
+<style>
+:root {
+  --ink-900: #07101F;
+  --ink-800: #0B1A35;
+  --ink-700: #102447;
+  --ink-600: #1A2F5C;
+  --ink-500: #2A4178;
+  --ink-300: #6B82B0;
+  --ink-200: #A8B8D6;
+  --ink-100: #DCE4F2;
+  --paper:   #F4EFE6;
+  --champagne: #C9A961;
+  --champagne-bright: #E5C87E;
+  --champagne-dim: #8E7843;
+  --burgundy: #8B2840;
+  --emerald: #2D7A5F;
+  --rust:    #B5532E;
+  --grain-opacity: 0.04;
+}
+
+* { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; box-sizing: border-box; }
+html, body { background: var(--ink-900); color: var(--ink-100); font-family: 'Manrope', sans-serif; margin: 0; }
+body { min-height: 100vh; overflow-x: hidden; }
+
+.font-display { font-family: 'Fraunces', serif; font-optical-sizing: auto; }
+.font-mono { font-family: 'JetBrains Mono', monospace; }
+
+.bg-luxe {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201, 169, 97, 0.08), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(42, 65, 120, 0.4), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 0% 80%, rgba(139, 40, 64, 0.12), transparent 60%),
+    var(--ink-900);
+}
+
+.grain::before {
+  content: '';
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.glass {
+  background: linear-gradient(180deg, rgba(26, 47, 92, 0.45) 0%, rgba(11, 26, 53, 0.55) 100%);
+  border: 1px solid rgba(201, 169, 97, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 24px 48px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.glass-sharp {
+  background: linear-gradient(180deg, rgba(16, 36, 71, 0.7) 0%, rgba(11, 26, 53, 0.7) 100%);
+  border: 1px solid rgba(168, 184, 214, 0.08);
+}
+
+.divider-gold { height: 1px; background: linear-gradient(90deg, transparent, rgba(201, 169, 97, 0.5), transparent); }
+.hr-fade { height: 1px; background: linear-gradient(90deg, transparent, rgba(168, 184, 214, 0.18), transparent); }
+
+.kpi-value {
+  font-family: 'Fraunces', serif; font-weight: 400;
+  font-variation-settings: 'opsz' 144; letter-spacing: -0.02em; line-height: 0.95;
+}
+
+@keyframes count-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.count-up { animation: count-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@keyframes panel-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+.panel-rise { animation: panel-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+.nav-item {
+  position: relative; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border-left: 2px solid transparent; display: flex; align-items: center; gap: 12px;
+  padding: 12px 32px; font-size: 14px; text-decoration: none; color: var(--ink-200); cursor: pointer;
+}
+.nav-item:hover { background: rgba(201, 169, 97, 0.06); color: var(--champagne-bright); }
+.nav-item.active {
+  background: linear-gradient(90deg, rgba(201, 169, 97, 0.12), transparent);
+  border-left-color: var(--champagne); color: var(--champagne-bright);
+}
+.nav-item.active::after {
+  content: ''; position: absolute; right: 1rem; top: 50%; transform: translateY(-50%);
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--champagne); box-shadow: 0 0 8px var(--champagne);
+}
+
+.chip {
+  background: rgba(168, 184, 214, 0.06); border: 1px solid rgba(168, 184, 214, 0.15);
+  color: var(--ink-100); transition: all 0.2s ease; cursor: pointer; padding: 6px 14px;
+  border-radius: 6px; font-size: 12px;
+}
+.chip:hover { border-color: var(--champagne); color: var(--champagne-bright); }
+.chip.active { background: rgba(201, 169, 97, 0.15); border-color: var(--champagne); color: var(--champagne-bright); }
+
+.btn-gold {
+  background: linear-gradient(180deg, var(--champagne-bright) 0%, var(--champagne) 100%);
+  color: var(--ink-900); font-weight: 600; letter-spacing: 0.02em;
+  box-shadow: 0 4px 14px rgba(201, 169, 97, 0.3); transition: all 0.2s ease;
+  border: none; cursor: pointer; border-radius: 8px; padding: 12px 24px; font-size: 14px;
+}
+.btn-gold:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(201, 169, 97, 0.4); }
+.btn-ghost {
+  border: 1px solid rgba(201, 169, 97, 0.4); color: var(--champagne-bright);
+  transition: all 0.2s ease; background: transparent; cursor: pointer; border-radius: 8px;
+  padding: 8px 16px; font-size: 12px;
+}
+.btn-ghost:hover { background: rgba(201, 169, 97, 0.08); border-color: var(--champagne); }
+
+@keyframes pulse-gold { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+.pulse-gold { animation: pulse-gold 1.5s ease-in-out infinite; }
+
+@keyframes ring-spin { to { transform: rotate(360deg); } }
+.ring-loader {
+  width: 48px; height: 48px; border: 2px solid rgba(201, 169, 97, 0.15);
+  border-top-color: var(--champagne); border-radius: 50%; animation: ring-spin 1s linear infinite;
+}
+
+.dropzone {
+  background: linear-gradient(180deg, rgba(26, 47, 92, 0.3), rgba(11, 26, 53, 0.4));
+  border: 1.5px dashed rgba(201, 169, 97, 0.4); transition: all 0.3s ease; border-radius: 16px;
+  padding: 2rem; text-align: center;
+}
+.dropzone.dragging {
+  border-color: var(--champagne-bright);
+  background: linear-gradient(180deg, rgba(201, 169, 97, 0.08), rgba(11, 26, 53, 0.4));
+  box-shadow: inset 0 0 60px rgba(201, 169, 97, 0.1);
+}
+
+.lux-table { width: 100%; border-collapse: collapse; }
+.lux-table th {
+  text-align: left; font-family: 'Manrope', sans-serif; font-size: 10px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-300);
+  padding: 12px 16px; border-bottom: 1px solid rgba(168, 184, 214, 0.15);
+  background: rgba(7, 16, 31, 0.4);
+}
+.lux-table td { padding: 12px 16px; font-size: 13px; color: var(--ink-100); border-bottom: 1px solid rgba(168, 184, 214, 0.06); }
+.lux-table tr:hover td { background: rgba(201, 169, 97, 0.04); }
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 500; font-family: 'Manrope', sans-serif;
+}
+.badge-success { background: rgba(45, 122, 95, 0.15); color: #5BB892; border: 1px solid rgba(45, 122, 95, 0.3); }
+.badge-warn { background: rgba(181, 83, 46, 0.15); color: #E5904F; border: 1px solid rgba(181, 83, 46, 0.3); }
+.badge-danger { background: rgba(139, 40, 64, 0.18); color: #E27A93; border: 1px solid rgba(139, 40, 64, 0.4); }
+.badge-neutral { background: rgba(168, 184, 214, 0.08); color: var(--ink-200); border: 1px solid rgba(168, 184, 214, 0.15); }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--ink-900); }
+::-webkit-scrollbar-thumb { background: rgba(201, 169, 97, 0.2); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(201, 169, 97, 0.4); }
+
+.dot-gold { width: 6px; height: 6px; border-radius: 50%; background: var(--champagne); box-shadow: 0 0 12px var(--champagne); }
+
+select {
+  background: rgba(7, 16, 31, 0.6); border: 1px solid rgba(168, 184, 214, 0.18);
+  color: var(--ink-100); padding: 8px 32px 8px 12px; border-radius: 6px; font-size: 13px;
+  appearance: none; cursor: pointer;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23C9A961' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+}
+select:focus { outline: none; border-color: var(--champagne); }
+
+input[type=text] {
+  background: rgba(7, 16, 31, 0.6); border: 1px solid rgba(168, 184, 214, 0.18);
+  color: var(--ink-100); padding: 8px 12px; border-radius: 6px; font-size: 13px; font-family: 'Manrope', sans-serif;
+}
+input[type=text]:focus { outline: none; border-color: var(--champagne); }
+
+.echarts-tooltip {
+  background: rgba(7, 16, 31, 0.95) !important; border: 1px solid rgba(201, 169, 97, 0.3) !important;
+  border-radius: 8px !important; box-shadow: 0 12px 32px rgba(0,0,0,0.6) !important;
+}
+
+.section-eyebrow {
+  font-family: 'Manrope', sans-serif; font-size: 10px; font-weight: 600;
+  letter-spacing: 0.24em; text-transform: uppercase; color: var(--champagne);
+}
+.section-title {
+  font-family: 'Fraunces', serif; font-weight: 400;
+  font-variation-settings: 'opsz' 144; letter-spacing: -0.01em; color: var(--paper);
+}
+
+/* Sidebar */
+#sidebar {
+  position: fixed; left: 0; top: 0; bottom: 0; width: 18rem; z-index: 40;
+  transform: translateX(-100%); transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-y: auto;
+}
+#sidebar.open { transform: translateX(0); }
+#sidebarBackdrop {
+  position: fixed; inset: 0; z-index: 35; background: rgba(7, 16, 31, 0.7);
+  backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transition: opacity 0.32s ease;
+}
+#sidebarBackdrop.open { opacity: 1; pointer-events: auto; }
+#mainContent { margin-left: 0; }
+#hamburger { display: inline-flex; }
+@media (min-width: 1024px) {
+  #sidebar { transform: translateX(0); }
+  #sidebarBackdrop { display: none; }
+  #mainContent { margin-left: 18rem; }
+  #hamburger { display: none; }
+}
+
+.view-pad { padding: 1.5rem 1rem; }
+@media (min-width: 640px) { .view-pad { padding: 2rem 1.5rem; } }
+@media (min-width: 768px) { .view-pad { padding: 2.5rem 2rem; } }
+@media (min-width: 1280px) { .view-pad { padding: 2.5rem 3rem; } }
+
+.topbar { padding: 0.875rem 1rem; gap: 0.75rem; }
+@media (min-width: 768px) { .topbar { padding: 1rem 1.5rem; } }
+@media (min-width: 1280px) { .topbar { padding: 1.25rem 3rem; } }
+
+.grid-kpi { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+@media (min-width: 640px) { .grid-kpi { gap: 1rem; } }
+@media (min-width: 1024px) { .grid-kpi { grid-template-columns: repeat(4, 1fr); gap: 1.25rem; } }
+
+.grid-2-1 { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+@media (min-width: 1024px) { .grid-2-1 { grid-template-columns: 1fr 1fr; gap: 1.25rem; } }
+.grid-2-3 { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+@media (min-width: 1024px) { .grid-2-3 { grid-template-columns: 2fr 1fr; gap: 1.25rem; } }
+.grid-3 { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+@media (min-width: 1024px) { .grid-3 { grid-template-columns: 1fr 1fr 1fr; gap: 1.25rem; } }
+.grid-7 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+@media (min-width: 640px) { .grid-7 { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 1024px) { .grid-7 { grid-template-columns: repeat(7, 1fr); gap: 0.5rem; } }
+
+.title-hero {
+  font-family: 'Fraunces', serif; font-weight: 300; letter-spacing: -0.025em;
+  color: var(--paper); font-size: 2.25rem; line-height: 1;
+}
+@media (min-width: 640px) { .title-hero { font-size: 3rem; } }
+@media (min-width: 1024px) { .title-hero { font-size: 3.5rem; } }
+
+.title-section {
+  font-family: 'Fraunces', serif; font-weight: 400; letter-spacing: -0.01em;
+  color: var(--paper); font-size: 1.25rem; line-height: 1.2;
+}
+@media (min-width: 768px) { .title-section { font-size: 1.5rem; } }
+
+.kpi-value-resp {
+  font-family: 'Fraunces', serif; font-weight: 400; font-variation-settings: 'opsz' 144;
+  letter-spacing: -0.02em; line-height: 0.95; font-size: 1.875rem; color: var(--paper);
+}
+@media (min-width: 640px) { .kpi-value-resp { font-size: 2.25rem; } }
+@media (min-width: 1024px) { .kpi-value-resp { font-size: 2.75rem; } }
+
+.kpi-card-resp { padding: 1rem; }
+@media (min-width: 640px) { .kpi-card-resp { padding: 1.25rem; } }
+@media (min-width: 1024px) { .kpi-card-resp { padding: 1.5rem; } }
+
+.panel-resp { padding: 1.25rem; }
+@media (min-width: 768px) { .panel-resp { padding: 1.5rem; } }
+@media (min-width: 1024px) { .panel-resp { padding: 1.75rem; } }
+
+.chart-h-sm { height: 240px; }
+.chart-h-md { height: 280px; }
+.chart-h-lg { height: 320px; }
+@media (min-width: 1024px) {
+  .chart-h-sm { height: 280px; }
+  .chart-h-md { height: 320px; }
+  .chart-h-lg { height: 380px; }
+}
+
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table-scroll table { min-width: max-content; }
+
+.hide-mobile { display: none; }
+@media (min-width: 768px) { .hide-mobile { display: block; } }
+.hide-mobile-inline { display: none; }
+@media (min-width: 768px) { .hide-mobile-inline { display: inline; } }
+
+#hamburger {
+  width: 40px; height: 40px; align-items: center; justify-content: center;
+  border: 1px solid rgba(201, 169, 97, 0.3); border-radius: 8px;
+  background: rgba(7, 16, 31, 0.6); color: var(--champagne); cursor: pointer; flex-shrink: 0;
+}
+#hamburger:hover { border-color: var(--champagne); background: rgba(201, 169, 97, 0.08); }
+
+.panel-header-resp {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap;
+}
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body class="bg-luxe grain">
+
+<!-- LANDING -->
+<div id="landing" class="relative" style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding: 2rem 1rem; z-index:10;">
+  <div style="width:100%; max-width:56rem;">
+    <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:2rem;" class="panel-rise" >
+      <div class="dot-gold"></div>
+      <span class="section-eyebrow" style="font-size:9px;">Crown Melbourne · Kitchen Equipment Operations</span>
+      <div class="dot-gold"></div>
+    </div>
+    <h1 class="title-hero" style="text-align:center; margin-bottom:1.5rem; font-size: clamp(2.25rem, 8vw, 5.5rem);" class="panel-rise">
+      The <em style="color: var(--champagne)">Equipment</em><br>
+      <span style="color: var(--ink-100)">Intelligence Layer</span>
+    </h1>
+    <p style="text-align:center; font-size:1rem; max-width:42rem; margin:0 auto 3rem; color: var(--ink-200); line-height:1.7;" class="panel-rise">
+      A unified analytical view of work order performance, maintenance economics, and equipment health
+      across <span style="color: var(--champagne)">Crown Melbourne</span> F&B kitchens — powered by 6 months of operational data.
+    </p>
+
+    <div class="dropzone panel-rise" id="dropzone" style="padding:2rem 1.5rem;">
+      <div style="display:flex; justify-content:center; margin-bottom:1.25rem;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="color: var(--champagne)">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+      </div>
+      <p class="font-display" style="font-size:1.25rem; color: var(--paper); margin-bottom:0.5rem;">Load both data sources</p>
+      <p style="font-size:0.75rem; color: var(--ink-300); margin-bottom:1.5rem;">
+        Drop <span class="font-mono" style="color: var(--champagne)">6_Months_Data.xlsx</span> and
+        <span class="font-mono" style="color: var(--champagne)">6_month_WO_asset_cost_.xlsx</span> here
+        <br><span style="opacity:0.7;">— together, or one at a time. The dashboard opens once both are loaded.</span>
+      </p>
+      <input type="file" id="fileInput" accept=".xlsx,.xls" multiple style="display:none" />
+      <button onclick="document.getElementById('fileInput').click()" class="btn-gold">SELECT FILES</button>
+      <p style="font-size:0.7rem; margin-top:1.5rem; color: var(--ink-300);" class="font-mono">All processing is in-browser · No data leaves your device</p>
+    </div>
+
+    <div class="grid-7" style="margin-top:2rem;" class="panel-rise">
+      <div style="text-align:center;"><div class="font-mono" style="font-size:0.75rem; color: var(--champagne)">599</div><div style="font-size:0.7rem; color: var(--ink-300)">Work Orders</div></div>
+      <div style="text-align:center;"><div class="font-mono" style="font-size:0.75rem; color: var(--champagne)">317</div><div style="font-size:0.7rem; color: var(--ink-300)">Costed WOs</div></div>
+      <div style="text-align:center;"><div class="font-mono" style="font-size:0.75rem; color: var(--champagne)">$303K</div><div style="font-size:0.7rem; color: var(--ink-300)">Total Spend</div></div>
+      <div style="text-align:center;"><div class="font-mono" style="font-size:0.75rem; color: var(--champagne)">40+</div><div style="font-size:0.7rem; color: var(--ink-300)">Locations</div></div>
+      <div style="text-align:center;"><div class="font-mono" style="font-size:0.75rem; color: var(--champagne)">132</div><div style="font-size:0.7rem; color: var(--ink-300)">Asset-Linked</div></div>
+      <div style="text-align:center;"><div class="font-mono" style="font-size:0.75rem; color: var(--champagne)">10</div><div style="font-size:0.7rem; color: var(--ink-300)">Months Span</div></div>
+      <div style="text-align:center;"><div class="font-mono" style="font-size:0.75rem; color: var(--champagne)">1</div><div style="font-size:0.7rem; color: var(--ink-300)">Vendor</div></div>
+    </div>
+  </div>
+
+  <div id="loadingOverlay" class="hidden" style="position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; background: rgba(7, 16, 31, 0.85); backdrop-filter: blur(8px);">
+    <div style="text-align:center;">
+      <div class="ring-loader" style="margin:0 auto 1.5rem;"></div>
+      <p class="font-display" style="font-size:1.5rem; color: var(--paper); margin-bottom:0.5rem;">Parsing data layer</p>
+      <p id="loadingMsg" class="font-mono" style="font-size:0.875rem; color: var(--champagne);">Reading Excel structure…</p>
+    </div>
+  </div>
+
+  <div id="errorOverlay" class="hidden" style="position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:2rem; background: rgba(7, 16, 31, 0.92); backdrop-filter: blur(8px);">
+    <div class="glass" style="max-width:42rem; width:100%; border-radius:16px; padding:2.5rem;">
+      <h3 class="font-display" style="font-size:1.5rem; color: var(--paper); margin-bottom:1rem;">File validation issue</h3>
+      <div id="errorDetails" class="font-mono" style="font-size:0.75rem; padding:1rem; border-radius:8px; max-height:15rem; overflow-y:auto; background: rgba(7, 16, 31, 0.6); border: 1px solid rgba(139, 40, 64, 0.2); color: #E27A93;"></div>
+      <div style="display:flex; justify-content:flex-end; margin-top:1.5rem;">
+        <button onclick="hideError()" class="btn-ghost">DISMISS</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div id="app" class="hidden" style="position:relative; z-index:10;">
+  <div id="sidebarBackdrop" onclick="toggleSidebar(false)"></div>
+
+  <aside id="sidebar" class="glass-sharp" style="border-right: 1px solid rgba(201, 169, 97, 0.12);">
+    <div style="padding:2rem; border-bottom: 1px solid rgba(168, 184, 214, 0.08);">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:4px;">
+        <div class="dot-gold"></div>
+        <span class="section-eyebrow">Crown Melbourne</span>
+      </div>
+      <h1 class="font-display" style="font-size:1.5rem; font-weight:300; letter-spacing:-0.025em; color: var(--paper);">
+        Kitchen <em style="color: var(--champagne)">Intelligence</em>
+      </h1>
+    </div>
+    <nav style="padding:1rem 0;">
+      <a href="#" data-view="executive" class="nav-item active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>
+        Executive
+      </a>
+      <a href="#" data-view="maintenance" class="nav-item">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Maintenance
+      </a>
+      <a href="#" data-view="locations" class="nav-item">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Locations
+      </a>
+      <a href="#" data-view="costs" class="nav-item">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        Cost Analysis
+      </a>
+      <a href="#" data-view="equipment" class="nav-item">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Equipment
+      </a>
+    </nav>
+    <div style="position:absolute; bottom:0; left:0; right:0; padding:1.5rem; border-top: 1px solid rgba(168, 184, 214, 0.08);">
+      <div style="font-size:0.7rem; color: var(--ink-300); margin-bottom:4px;">Data loaded</div>
+      <div id="loadedTimestamp" class="font-mono" style="font-size:0.7rem; color: var(--champagne); margin-bottom:12px;">—</div>
+      <button onclick="resetApp()" style="font-size:0.7rem; color: var(--ink-200); background:none; border:none; cursor:pointer; text-decoration:underline;">↻ Load different files</button>
+    </div>
+  </aside>
+
+  <main id="mainContent" style="min-height:100vh;">
+    <header class="topbar" style="position:sticky; top:0; z-index:20; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; background: linear-gradient(180deg, rgba(7,16,31,0.97) 0%, rgba(7,16,31,0.85) 100%); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(168, 184, 214, 0.06);">
+      <div style="display:flex; align-items:center; gap:12px; min-width:0; flex-shrink:1;">
+        <button id="hamburger" onclick="toggleSidebar()" aria-label="Open menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        </button>
+        <span class="font-mono hide-mobile-inline" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em; color: var(--ink-300);">Filter</span>
+        <select id="filterLocation" style="max-width:200px;">
+          <option value="all">All Locations</option>
+        </select>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
+        <div class="font-mono hide-mobile-inline" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em; color: var(--ink-300);">Jul 2025 – May 2026</div>
+        <div class="dot-gold pulse-gold"></div>
+        <span class="font-mono" style="font-size:0.7rem; color: var(--champagne);">LIVE</span>
+      </div>
+    </header>
+    <div id="viewContainer" class="view-pad"></div>
+  </main>
+</div>
+
+<script>
+// =============== STATE ===============
+const STATE = {
+  wo: null,
+  costWithAsset: null,
+  costWithoutAsset: null,
+  filter: { location: 'all' },
+  currentView: 'executive',
+  charts: {},
+};
+
+// =============== UTILITIES ===============
+const fmt = {
+  num: n => (n == null || isNaN(n)) ? '—' : Math.round(n).toLocaleString(),
+  num1: n => (n == null || isNaN(n)) ? '—' : (Math.round(n*10)/10).toLocaleString(),
+  money: n => (n == null || isNaN(n)) ? '—' : '$' + Math.round(n).toLocaleString(),
+  moneyShort: n => {
+    if (n == null || isNaN(n)) return '—';
+    if (Math.abs(n) >= 1e6) return '$' + (n/1e6).toFixed(2) + 'M';
+    if (Math.abs(n) >= 1e3) return '$' + (n/1e3).toFixed(1) + 'k';
+    return '$' + Math.round(n);
+  },
+  pct: n => (n == null || isNaN(n)) ? '—' : (n*100).toFixed(1) + '%',
+  date: d => {
+    if (!d) return '—';
+    const dt = (d instanceof Date) ? d : new Date(d);
+    if (isNaN(dt)) return String(d).slice(0,10);
+    return dt.toISOString().slice(0,10);
+  }
+};
+
+function parseDate(v) {
+  if (v == null || v === '') return null;
+  if (v instanceof Date) return v;
+  if (typeof v === 'number') return new Date(Math.round((v - 25569) * 86400 * 1000));
+  const d = new Date(v);
+  return isNaN(d) ? null : d;
+}
+
+function showLoading(msg) {
+  document.getElementById('loadingMsg').textContent = msg;
+  document.getElementById('loadingOverlay').classList.remove('hidden');
+}
+function hideLoading() { document.getElementById('loadingOverlay').classList.add('hidden'); }
+function showError(details) {
+  document.getElementById('errorDetails').textContent = details;
+  document.getElementById('errorOverlay').classList.remove('hidden');
+}
+function hideError() { document.getElementById('errorOverlay').classList.add('hidden'); }
+function showStagingStatus(msg) {
+  // Show a non-blocking note on the landing page instead of the red error overlay
+  let banner = document.getElementById('stagingBanner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'stagingBanner';
+    banner.style.cssText = 'max-width:42rem; margin:1.5rem auto 0; padding:1rem 1.25rem; border-radius:8px; background: rgba(193,160,103,0.08); border:1px solid rgba(193,160,103,0.3); color: var(--paper); font-size:0.85rem; text-align:center;';
+    const dz = document.getElementById('dropzone');
+    dz.parentNode.insertBefore(banner, dz.nextSibling);
+  }
+  banner.innerHTML = '<span style="color:var(--champagne); font-family: var(--font-mono); font-size:0.7rem; letter-spacing:0.1em;">▸ STAGED</span><br><span style="color: var(--ink-100);">' + msg + '</span>';
+  banner.style.display = 'block';
+}
+function hideStagingStatus() {
+  const b = document.getElementById('stagingBanner');
+  if (b) b.style.display = 'none';
+}
+
+// =============== FILE LOADING ===============
+document.getElementById('fileInput').addEventListener('change', e => {
+  const files = Array.from(e.target.files);
+  if (files.length > 0) loadFiles(files);
+});
+
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragging'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragging'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('dragging');
+  const files = Array.from(e.dataTransfer.files);
+  if (files.length > 0) loadFiles(files);
+});
+
+// Persistent staging so multiple drops accumulate
+const STAGED = { woData: null, costWA: null, costWOA: null, fileNames: [] };
+
+async function loadFiles(files) {
+  showLoading('Reading workbook structures…');
+  try {
+    for (const file of files) {
+      const buffer = await file.arrayBuffer();
+      showLoading(`Parsing ${file.name}…`);
+      await new Promise(r => setTimeout(r, 120));
+      const wb = XLSX.read(buffer, { type: 'array', cellDates: true });
+      STAGED.fileNames.push(file.name);
+
+      const isCostFile = wb.SheetNames.includes('With Asset') || wb.SheetNames.includes('Without Asset');
+
+      if (isCostFile) {
+        // Cost file: title in row 1, header in row 2, data from row 3.
+        // Use sheet_to_json with range:1 (zero-indexed, so skip row 1) and named headers from row 2.
+        if (wb.SheetNames.includes('With Asset')) {
+          const raw = XLSX.utils.sheet_to_json(wb.Sheets['With Asset'], { range: 1, defval: null });
+          STAGED.costWA = raw.map(r => ({
+            Work_Order: String(r['Work Order'] ?? '').trim(),
+            Description: String(r['Description'] ?? ''),
+            Location_Code: String(r['Location Code'] ?? '').trim(),
+            Asset: String(r['Asset'] ?? '').trim(),
+            Total_Price: parseFloat(r['Total Price (inc GST)']) || 0
+          })).filter(r => r.Work_Order && r.Total_Price > 0);
+        }
+        if (wb.SheetNames.includes('Without Asset')) {
+          const raw = XLSX.utils.sheet_to_json(wb.Sheets['Without Asset'], { range: 1, defval: null });
+          STAGED.costWOA = raw.map(r => ({
+            Work_Order: String(r['Work Order'] ?? '').trim(),
+            Description: String(r['Description'] ?? ''),
+            Location_Code: String(r['Location Code'] ?? '').trim(),
+            Asset: String(r['Asset'] ?? '').trim(),
+            Total_Price: parseFloat(r['Total Price (inc GST)']) || 0
+          })).filter(r => r.Work_Order && r.Total_Price > 0);
+        }
+      } else if (wb.SheetNames.length > 0) {
+        // Main WO file — single sheet, header in row 1
+        const sheetName = wb.SheetNames[0];
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: null });
+        // Validate it's actually the main file by checking for required columns
+        if (rows.length > 0 && ('Work Order' in rows[0]) && ('Work Type' in rows[0])) {
+          STAGED.woData = rows.filter(r => r['Work Order'] != null).map(r => ({
+            Work_Order: String(r['Work Order']).trim(),
+            Owner_Group: r['Owner Group'],
+            Priority: r['Priority'],
+            Description: r['Description'] || '',
+            Location: r['Location'] || '',
+            Location_Description: r['Location Description'] || '',
+            Asset: r['Asset'],
+            Asset_Tag: r['Asset Tag'],
+            Status: r['Status'] || '',
+            Reported_Date: parseDate(r['Reported Date']),
+            Vendor_Name: r['Vendor Name'] || '',
+            Status_Date: parseDate(r['Status Date']),
+            Work_Type: r['Work Type'] || '',
+            Site: r['Site'] || '',
+          }));
+        }
+      }
+    }
+
+    // Check completeness — if missing one, prompt for the other instead of erroring out
+    const hasMain = !!STAGED.woData;
+    const hasCost = !!(STAGED.costWA || STAGED.costWOA);
+
+    if (!hasMain && !hasCost) {
+      hideLoading();
+      showError('Could not recognise this file. Please drop 6_Months_Data.xlsx (work orders) and/or 6_month_WO_asset_cost_.xlsx (costs).');
+      return;
+    }
+
+    if (!hasMain) {
+      hideLoading();
+      const waN = STAGED.costWA ? STAGED.costWA.length : 0;
+      const woaN = STAGED.costWOA ? STAGED.costWOA.length : 0;
+      showStagingStatus(`Cost file loaded (${waN + woaN} costed work orders). Now drop the main work order file 6_Months_Data.xlsx to complete.`);
+      return;
+    }
+
+    if (!hasCost) {
+      // Main file alone is workable — costs will all be zero but the dashboard still renders
+      console.warn('No cost file loaded. Cost views will be empty.');
+    }
+
+    const woData = STAGED.woData;
+    const costWA = STAGED.costWA || [];
+    const costWOA = STAGED.costWOA || [];
+
+    showLoading('Building intelligence layer…');
+    await new Promise(r => setTimeout(r, 300));
+
+    STATE.wo = woData;
+    STATE.costWithAsset = costWA || [];
+    STATE.costWithoutAsset = costWOA || [];
+
+    // Build cost lookup
+    STATE.costMap = {};
+    [...STATE.costWithAsset, ...STATE.costWithoutAsset].forEach(c => {
+      STATE.costMap[c.Work_Order] = (STATE.costMap[c.Work_Order] || 0) + c.Total_Price;
+    });
+
+    // Populate location filter
+    const locs = [...new Set(woData.map(r => r.Location))].sort();
+    const sel = document.getElementById('filterLocation');
+    sel.innerHTML = '<option value="all">All Locations</option>';
+    locs.forEach(l => {
+      if (!l) return;
+      const opt = document.createElement('option');
+      opt.value = l; opt.textContent = l;
+      sel.appendChild(opt);
+    });
+
+    document.getElementById('loadedTimestamp').textContent = new Date().toLocaleString();
+    hideLoading();
+    hideStagingStatus();
+    document.getElementById('landing').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    renderView('executive');
+  } catch (err) {
+    hideLoading();
+    showError('Could not parse files: ' + err.message);
+    console.error(err);
+  }
+}
+
+function resetApp() {
+  Object.values(STATE.charts).forEach(c => c.dispose && c.dispose());
+  STATE.charts = {}; STATE.wo = null;
+  STAGED.woData = null; STAGED.costWA = null; STAGED.costWOA = null; STAGED.fileNames = [];
+  hideStagingStatus();
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('landing').classList.remove('hidden');
+  document.getElementById('fileInput').value = '';
+}
+
+function getFiltered() {
+  const loc = STATE.filter.location;
+  if (loc === 'all') return STATE.wo;
+  return STATE.wo.filter(r => r.Location === loc);
+}
+
+function getAllCosts() {
+  return [...STATE.costWithAsset, ...STATE.costWithoutAsset];
+}
+
+function getFilteredCosts() {
+  const loc = STATE.filter.location;
+  if (loc === 'all') return getAllCosts();
+  return getAllCosts().filter(c => c.Location_Code === loc);
+}
+
+// =============== NAVIGATION ===============
+function toggleSidebar(force) {
+  const sb = document.getElementById('sidebar');
+  const bd = document.getElementById('sidebarBackdrop');
+  const open = (typeof force === 'boolean') ? force : !sb.classList.contains('open');
+  sb.classList.toggle('open', open);
+  bd.classList.toggle('open', open);
+}
+
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', e => {
+    e.preventDefault();
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    el.classList.add('active');
+    renderView(el.dataset.view);
+    if (window.matchMedia('(max-width: 1023px)').matches) toggleSidebar(false);
+  });
+});
+
+document.getElementById('filterLocation').addEventListener('change', e => {
+  STATE.filter.location = e.target.value;
+  renderView(STATE.currentView);
+});
+
+function renderView(view) {
+  STATE.currentView = view;
+  Object.values(STATE.charts).forEach(c => { try { c.dispose && c.dispose(); } catch(e){} });
+  STATE.charts = {};
+  const container = document.getElementById('viewContainer');
+  container.innerHTML = '';
+  if (view === 'executive') renderExecutive(container);
+  else if (view === 'maintenance') renderMaintenance(container);
+  else if (view === 'locations') renderLocations(container);
+  else if (view === 'costs') renderCosts(container);
+  else if (view === 'equipment') renderEquipment(container);
+  setTimeout(initCharts, 50);
+}
+
+// =============== ECHARTS THEME ===============
+const CHART_COLORS = ['#C9A961', '#E5C87E', '#5BB892', '#E27A93', '#E5904F', '#8FA8DA', '#B58FE2', '#7DD3C0', '#F2A6B0', '#A8D8EA'];
+const chartBaseTheme = {
+  backgroundColor: 'transparent',
+  textStyle: { fontFamily: 'Manrope, sans-serif', color: '#A8B8D6' },
+  grid: { left: 50, right: 30, top: 40, bottom: 50, containLabel: true },
+};
+function tooltipStyle() {
+  return {
+    backgroundColor: 'rgba(7, 16, 31, 0.95)', borderColor: 'rgba(201, 169, 97, 0.4)', borderWidth: 1,
+    textStyle: { color: '#F4EFE6', fontFamily: 'Manrope', fontSize: 12 },
+    extraCssText: 'box-shadow: 0 12px 32px rgba(0,0,0,0.6); border-radius: 8px;'
+  };
+}
+function axisStyle(name) {
+  return {
+    name, nameTextStyle: { color: '#6B82B0', fontSize: 10, fontFamily: 'Manrope' },
+    axisLine: { lineStyle: { color: 'rgba(168, 184, 214, 0.2)' } },
+    axisTick: { show: false },
+    axisLabel: { color: '#A8B8D6', fontSize: 11 },
+    splitLine: { lineStyle: { color: 'rgba(168, 184, 214, 0.06)' } },
+  };
+}
+function pendingChart(id, opts) { STATE.charts[id] = { _opts: opts, _id: id }; }
+function initCharts() {
+  for (const [id, entry] of Object.entries(STATE.charts)) {
+    if (entry._opts) {
+      const dom = document.getElementById(id);
+      if (!dom) continue;
+      const c = echarts.init(dom);
+      c.setOption(entry._opts);
+      STATE.charts[id] = c;
+    }
+  }
+}
+let _resizeRAF;
+function resizeAllCharts() {
+  cancelAnimationFrame(_resizeRAF);
+  _resizeRAF = requestAnimationFrame(() => {
+    Object.values(STATE.charts).forEach(c => { try { c.resize && c.resize(); } catch(e){} });
+  });
+}
+window.addEventListener('resize', resizeAllCharts);
+
+// =============== KPI & PANEL HELPERS ===============
+function kpiCard(label, value, sub, accent) {
+  return `<div class="glass rounded-xl kpi-card-resp panel-rise" style="animation-delay:${Math.random()*0.3}s; border-radius:12px;">
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px;">
+      <span class="section-eyebrow" style="color:${accent||'var(--champagne)'}">${label}</span>
+      <div style="width:4px; height:32px; border-radius:4px; background:${accent||'var(--champagne)'}"></div>
+    </div>
+    <div class="kpi-value-resp count-up" style="margin-bottom:8px;">${value}</div>
+    ${sub ? `<div style="font-size:0.75rem; color: var(--ink-300)">${sub}</div>` : ''}
+  </div>`;
+}
+
+function panelHeader(eyebrow, title, hint) {
+  return `<div class="panel-header-resp">
+    <div style="min-width:0;">
+      <div class="section-eyebrow" style="margin-bottom:4px;">${eyebrow}</div>
+      <h2 class="title-section">${title}</h2>
+    </div>
+    ${hint ? `<div class="font-mono" style="font-size:0.75rem; flex-shrink:0; color: var(--ink-300)">${hint}</div>` : ''}
+  </div>`;
+}
+
+// =============== VIEW: EXECUTIVE ===============
+function renderExecutive(c) {
+  const d = getFiltered();
+  const allCosts = getFilteredCosts();
+  const totalWO = d.length;
+  const totalSpend = allCosts.reduce((s,r) => s + r.Total_Price, 0);
+  const cmCount = d.filter(r => r.Work_Type === 'CM').length;
+  const pmCount = d.filter(r => r.Work_Type === 'PM').length;
+  const closedComplete = d.filter(r => r.Status === 'CLOSE' || r.Status === 'COMPLETE').length;
+  const completionRate = closedComplete / Math.max(1, totalWO);
+  const cancelledRate = d.filter(r => r.Status === 'CANCELLED').length / Math.max(1, totalWO);
+  const openWOs = d.filter(r => ['WASSIGN','WREVIEW','WACTION'].includes(r.Status)).length;
+  const avgCost = allCosts.length ? totalSpend / allCosts.length : 0;
+  const assetLinked = d.filter(r => r.Asset != null && r.Asset !== '').length;
+  const assetPct = assetLinked / Math.max(1, totalWO);
+
+  // Monthly trend
+  const monthly = {};
+  d.forEach(r => {
+    if (!r.Reported_Date) return;
+    const k = r.Reported_Date.toISOString().slice(0,7);
+    monthly[k] = (monthly[k]||0) + 1;
+  });
+  const monthlyKeys = Object.keys(monthly).sort();
+
+  // Priority breakdown
+  const prioCounts = {};
+  d.forEach(r => { prioCounts[r.Priority] = (prioCounts[r.Priority]||0) + 1; });
+  const prioLabels = Object.keys(prioCounts).sort((a,b)=>a-b);
+
+  // Work type
+  const wtCounts = {};
+  d.forEach(r => { wtCounts[r.Work_Type] = (wtCounts[r.Work_Type]||0) + 1; });
+
+  // Status breakdown
+  const statusCounts = {};
+  d.forEach(r => { statusCounts[r.Status] = (statusCounts[r.Status]||0) + 1; });
+
+  // Top locations by WO count
+  const locCounts = {};
+  d.forEach(r => { if(r.Location) locCounts[r.Location] = (locCounts[r.Location]||0) + 1; });
+  const topLocs = Object.entries(locCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+
+  c.innerHTML = `
+    <div style="margin-bottom:2rem;" class="panel-rise">
+      <div class="section-eyebrow" style="margin-bottom:8px;">Executive Briefing</div>
+      <h1 class="title-hero" style="margin-bottom:8px;">Operations <em style="color: var(--champagne)">at a glance</em></h1>
+      <p style="font-size:0.875rem; max-width:42rem; color: var(--ink-300);">
+        Six-month rolling view of kitchen equipment maintenance across Crown Melbourne — 
+        work orders, cost economics, and operational velocity.
+      </p>
+    </div>
+
+    <div class="grid-kpi" style="margin-bottom:1.5rem;">
+      ${kpiCard('Total Work Orders', fmt.num(totalWO), `${fmt.num(cmCount)} corrective · ${fmt.num(pmCount)} preventive`, 'var(--champagne)')}
+      ${kpiCard('Total Spend', fmt.moneyShort(totalSpend), `${fmt.num(allCosts.length)} costed WOs`, 'var(--champagne)')}
+      ${kpiCard('Completion Rate', fmt.pct(completionRate), `${fmt.num(openWOs)} still open`, completionRate > 0.7 ? '#5BB892' : '#E5904F')}
+      ${kpiCard('Avg Cost / WO', fmt.money(avgCost), 'Inc GST', 'var(--ink-200)')}
+    </div>
+
+    <div class="grid-kpi" style="margin-bottom:1.5rem;">
+      ${kpiCard('Corrective (CM)', fmt.num(cmCount), fmt.pct(cmCount/Math.max(1,totalWO))+' of total', '#E5904F')}
+      ${kpiCard('Preventive (PM)', fmt.num(pmCount), fmt.pct(pmCount/Math.max(1,totalWO))+' of total', '#5BB892')}
+      ${kpiCard('Asset Linked', fmt.pct(assetPct), `${fmt.num(assetLinked)} of ${fmt.num(totalWO)}`, assetPct > 0.5 ? '#5BB892' : '#E27A93')}
+      ${kpiCard('Cancelled', fmt.pct(cancelledRate), `${fmt.num(d.filter(r=>r.Status==='CANCELLED').length)} WOs`, '#E27A93')}
+    </div>
+
+    <div class="grid-2-3" style="margin-bottom:1.5rem;">
+      <div class="glass panel-resp panel-rise" style="border-radius:12px;">
+        ${panelHeader('Velocity', 'Monthly work order volume', '')}
+        <div id="chart_monthly" class="chart-h-lg"></div>
+      </div>
+      <div class="glass panel-resp panel-rise" style="border-radius:12px;">
+        ${panelHeader('Work type', 'CM vs PM split', '')}
+        <div id="chart_worktype" class="chart-h-lg"></div>
+      </div>
+    </div>
+
+    <div class="grid-2-1" style="margin-bottom:1.5rem;">
+      <div class="glass panel-resp panel-rise" style="border-radius:12px;">
+        ${panelHeader('Priority', 'Distribution of WO urgency', '')}
+        <div id="chart_priority" class="chart-h-md"></div>
+      </div>
+      <div class="glass panel-resp panel-rise" style="border-radius:12px;">
+        ${panelHeader('Status', 'WO lifecycle', '')}
+        <div id="chart_status" class="chart-h-md"></div>
+      </div>
+    </div>
+
+    <div class="glass panel-resp panel-rise" style="border-radius:12px;">
+      ${panelHeader('Hotspots', 'Top 10 locations by work order volume', '')}
+      <div class="table-scroll">
+        <table class="lux-table">
+          <thead><tr><th>Location</th><th>WO Count</th><th>% of Total</th><th>Volume</th></tr></thead>
+          <tbody>
+            ${topLocs.map(([loc, cnt]) => `<tr>
+              <td class="font-display" style="color: var(--paper); white-space:nowrap; font-size:14px;">${loc}</td>
+              <td class="font-mono">${cnt}</td>
+              <td class="font-mono">${fmt.pct(cnt/totalWO)}</td>
+              <td><div style="width:120px; height:6px; background: rgba(168,184,214,0.1); border-radius:3px; position:relative;">
+                <div style="position:absolute; left:0; top:0; height:100%; width:${cnt/topLocs[0][1]*100}%; background: linear-gradient(90deg, var(--champagne), var(--champagne-bright)); border-radius:3px;"></div>
+              </div></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  // Monthly chart
+  pendingChart('chart_monthly', {
+    ...chartBaseTheme,
+    tooltip: { trigger: 'axis', ...tooltipStyle() },
+    xAxis: { type: 'category', data: monthlyKeys.map(k => k.slice(2)), ...axisStyle() },
+    yAxis: { type: 'value', ...axisStyle('WOs') },
+    series: [{
+      type: 'bar', data: monthlyKeys.map(k => monthly[k]),
+      itemStyle: { color: { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops: [{offset:0,color:'#E5C87E'},{offset:1,color:'#8E7843'}]}, borderRadius: [4,4,0,0] },
+      barWidth: '50%',
+      label: { show: true, position: 'top', color: '#F4EFE6', fontFamily: 'Manrope', fontWeight: 500 }
+    }]
+  });
+
+  // Work type pie
+  const wtData = Object.entries(wtCounts).map(([k,v],i) => ({ name: k, value: v, itemStyle: { color: CHART_COLORS[i] } }));
+  pendingChart('chart_worktype', {
+    ...chartBaseTheme, tooltip: { trigger: 'item', ...tooltipStyle() },
+    series: [{ type: 'pie', radius: ['45%','75%'], avoidLabelOverlap: true,
+      itemStyle: { borderColor: '#0B1A35', borderWidth: 3 },
+      label: { color: '#A8B8D6', fontSize: 11, fontFamily: 'Manrope' },
+      data: wtData
+    }]
+  });
+
+  // Priority chart
+  const prioColors = { 1: '#E27A93', 2: '#E5904F', 3: '#8FA8DA', 4: '#5BB892', 5: '#C9A961', 6: '#B58FE2' };
+  pendingChart('chart_priority', {
+    ...chartBaseTheme,
+    tooltip: { trigger: 'axis', ...tooltipStyle(), axisPointer:{type:'shadow'} },
+    xAxis: { type: 'category', data: prioLabels.map(p => 'P'+p), ...axisStyle() },
+    yAxis: { type: 'value', ...axisStyle('Count') },
+    series: [{
+      type: 'bar',
+      data: prioLabels.map(p => ({ value: prioCounts[p], itemStyle: { color: prioColors[p] || '#C9A961', borderRadius: [4,4,0,0] } })),
+      barWidth: '45%',
+      label: { show: true, position: 'top', color: '#F4EFE6', fontFamily: 'Manrope', fontWeight: 500 }
+    }]
+  });
+
+  // Status pie
+  const statusColors = { 'CLOSE': '#5BB892', 'COMPLETE': '#7DD3C0', 'WASSIGN': '#E5904F', 'CANCELLED': '#E27A93', 'WREVIEW': '#8FA8DA', 'WACTION': '#B58FE2' };
+  pendingChart('chart_status', {
+    ...chartBaseTheme, tooltip: { trigger: 'item', ...tooltipStyle() },
+    series: [{ type: 'pie', radius: ['45%','75%'],
+      itemStyle: { borderColor: '#0B1A35', borderWidth: 3 },
+      label: { color: '#A8B8D6', fontSize: 10, fontFamily: 'Manrope' },
+      data: Object.entries(statusCounts).map(([k,v]) => ({ name: k, value: v, itemStyle: { color: statusColors[k] || '#C9A961' } }))
+    }]
+  });
+}
+
+// =============== VIEW: MAINTENANCE ===============
+function renderMaintenance(c) {
+  const d = getFiltered();
+  const cm = d.filter(r => r.Work_Type === 'CM');
+  const pm = d.filter(r => r.Work_Type === 'PM');
+  const ppmRatio = pm.length / Math.max(1, cm.length);
+
+  // Resolution time
+  const resolved = d.filter(r => r.Reported_Date && r.Status_Date);
+  const resTimes = resolved.map(r => (r.Status_Date - r.Reported_Date) / 86400000);
+  const avgRes = resTimes.length ? resTimes.reduce((s,v)=>s+v,0)/resTimes.length : 0;
+  const medRes = resTimes.length ? resTimes.sort((a,b)=>a-b)[Math.floor(resTimes.length/2)] : 0;
+
+  // CM vs PM by month
+  const months = {};
+  d.forEach(r => {
+    if (!r.Reported_Date) return;
+    const k = r.Reported_Date.toISOString().slice(0,7);
+    if (!months[k]) months[k] = { CM: 0, PM: 0 };
+    if (r.Work_Type === 'CM') months[k].CM++;
+    else if (r.Work_Type === 'PM') months[k].PM++;
+  });
+  const monthKeys = Object.keys(months).sort();
+
+  // Priority mix table
+  const prios = [1,2,3,4,5];
+  const prioStats = prios.map(p => {
+    const rows = d.filter(r => r.Priority === p);
+    const cmR = rows.filter(r => r.Work_Type === 'CM').length;
+    const pmR = rows.filter(r => r.Work_Type === 'PM').length;
+    return { priority: p, count: rows.length, cm: cmR, pm: pmR };
+  }).filter(s => s.count > 0);
+
+  // Equipment keyword analysis
+  const keywords = [
+    {kw:'oven', label:'Ovens'}, {kw:'door', label:'Doors/Seals'}, {kw:'hot box', label:'Hot Boxes'},
+    {kw:'steam', label:'Steam Issues'}, {kw:'ice', label:'Ice Machines'}, {kw:'leak', label:'Leaks'},
+    {kw:'microwave', label:'Microwaves'}, {kw:'dishwasher', label:'Dishwashers'}, {kw:'kettle', label:'Kettles'},
+    {kw:'fryer', label:'Fryers'}, {kw:'grill', label:'Grills'}, {kw:'fan', label:'Fans'},
+  ];
+  const kwStats = keywords.map(({kw, label}) => {
+    const count = d.filter(r => r.Description && r.Description.toLowerCase().includes(kw)).length;
+    return { label, kw, count };
+  }).filter(s => s.count > 0).sort((a,b)=>b.count-a.count);
+
+  c.innerHTML = `
+    <div style="margin-bottom:2rem;" class="panel-rise">
+      <div class="section-eyebrow" style="margin-bottom:8px;">Operations</div>
+      <h1 class="title-hero" style="margin-bottom:8px;">Maintenance <em style="color: var(--champagne)">analytics</em></h1>
+      <p style="font-size:0.875rem; max-width:42rem; color: var(--ink-300);">
+        Work order patterns, resolution velocity, and the corrective-to-preventive balance.
+      </p>
+    </div>
+
+    <div class="grid-kpi" style="margin-bottom:1.5rem;">
+      ${kpiCard('CM Orders', fmt.num(cm.length), 'Corrective maintenance', '#E5904F')}
+      ${kpiCard('PM Orders', fmt.num(pm.length), 'Preventive maintenance', '#5BB892')}
+      ${kpiCard('PM Ratio', (ppmRatio*100).toFixed(1) + '%', 'PM as % of CM', ppmRatio > 0.3 ? '#5BB892' : '#E27A93')}
+      ${kpiCard('Avg Resolution', fmt.num1(avgRes) + '<span style="font-size:0.4em"> days</span>', 'Median: '+fmt.num1(medRes)+' days', 'var(--ink-200)')}
+    </div>
+
+    <div class="glass panel-resp panel-rise" style="border-radius:12px; margin-bottom:1.5rem;">
+      ${panelHeader('Trend', 'CM vs PM monthly volume', '')}
+      <div id="chart_cmpm" class="chart-h-lg"></div>
+    </div>
+
+    <div class="grid-2-1" style="margin-bottom:1.5rem;">
+      <div class="glass panel-resp panel-rise" style="border-radius:12px;">
+        ${panelHeader('Equipment issues', 'Top equipment types by WO volume', 'From descriptions')}
+        <div id="chart_equipment" class="chart-h-lg"></div>
+      </div>
+      <div class="glass panel-resp panel-rise" style="border-radius:12px;">
+        ${panelHeader('Priority mix', 'WO distribution by priority & type', '')}
+        <div class="table-scroll">
+          <table class="lux-table">
+            <thead><tr><th>Priority</th><th>Total</th><th>CM</th><th>PM</th></tr></thead>
+            <tbody>
+              ${prioStats.map(p => {
+                const colors = {1:'#E27A93',2:'#E5904F',3:'#8FA8DA',4:'#5BB892',5:'#C9A961'};
+                return `<tr>
+                  <td><span class="badge" style="background:${colors[p.priority]}25; color:${colors[p.priority]}; border:1px solid ${colors[p.priority]}50;">P${p.priority}</span></td>
+                  <td class="font-mono">${p.count}</td>
+                  <td class="font-mono">${p.cm}</td>
+                  <td class="font-mono">${p.pm}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // CM/PM monthly
+  pendingChart('chart_cmpm', {
+    ...chartBaseTheme,
+    tooltip: { trigger: 'axis', ...tooltipStyle() },
+    legend: { textStyle: { color: '#A8B8D6', fontFamily: 'Manrope' }, top: 0 },
+    xAxis: { type: 'category', data: monthKeys.map(k=>k.slice(2)), ...axisStyle() },
+    yAxis: { type: 'value', ...axisStyle('Count') },
+    series: [
+      { name: 'CM', type: 'bar', stack: 'a', data: monthKeys.map(k=>months[k].CM), itemStyle: { color: '#E5904F' }, barWidth: '40%' },
+      { name: 'PM', type: 'bar', stack: 'a', data: monthKeys.map(k=>months[k].PM), itemStyle: { color: '#5BB892', borderRadius:[4,4,0,0] }, barWidth: '40%' },
+    ]
+  });
+
+  // Equipment keyword chart
+  pendingChart('chart_equipment', {
+    ...chartBaseTheme,
+    grid: { left: 100, right: 30, top: 20, bottom: 30 },
+    tooltip: { trigger: 'axis', ...tooltipStyle() },
+    xAxis: { type: 'value', ...axisStyle('WOs') },
+    yAxis: { type: 'category', data: kwStats.map(s=>s.label).reverse(), ...axisStyle() },
+    series: [{ type: 'bar', data: kwStats.map(s=>s.count).reverse(), itemStyle: { color: '#C9A961', borderRadius: [0,4,4,0] }, barWidth: '55%' }]
+  });
+}
+
+// =============== VIEW: LOCATIONS ===============
+function renderLocations(c) {
+  const d = getFiltered();
+  const allCosts = getAllCosts();
+
+  // Location stats
+  const locStats = {};
+  d.forEach(r => {
+    if (!r.Location) return;
+    if (!locStats[r.Location]) locStats[r.Location] = { count: 0, cm: 0, pm: 0, desc: r.Location_Description };
+    locStats[r.Location].count++;
+    if (r.Work_Type === 'CM') locStats[r.Location].cm++;
+    if (r.Work_Type === 'PM') locStats[r.Location].pm++;
+  });
+
+  // Add cost data
+  const costByLoc = {};
+  allCosts.forEach(co => {
+    costByLoc[co.Location_Code] = (costByLoc[co.Location_Code] || 0) + co.Total_Price;
+  });
+  Object.keys(locStats).forEach(loc => {
+    locStats[loc].cost = costByLoc[loc] || 0;
+  });
+
+  const sorted = Object.entries(locStats).sort((a,b) => b[1].count - a[1].count);
+  const topByCost = Object.entries(locStats).filter(([,v])=>v.cost>0).sort((a,b) => b[1].cost - a[1].cost).slice(0,15);
+
+  c.innerHTML = `
+    <div style="margin-bottom:2rem;" class="panel-rise">
+      <div class="section-eyebrow" style="margin-bottom:8px;">Locations</div>
+      <h1 class="title-hero" style="margin-bottom:8px;">Kitchen <em style="color: var(--champagne)">hotspots</em></h1>
+      <p style="font-size:0.875rem; max-width:42rem; color: var(--ink-300);">
+        Work order concentration and cost exposure by venue location.
+      </p>
+    </div>
+
+    <div class="grid-kpi" style="margin-bottom:1.5rem;">
+      ${kpiCard('Locations', fmt.num(sorted.length), 'Active F&B zones', 'var(--champagne)')}
+      ${kpiCard('Highest Volume', sorted[0] ? sorted[0][0] : '—', sorted[0] ? fmt.num(sorted[0][1].count)+' WOs' : '', '#E5904F')}
+      ${kpiCard('Highest Cost', topByCost[0] ? topByCost[0][0] : '—', topByCost[0] ? fmt.money(topByCost[0][1].cost) : '', '#E27A93')}
+      ${kpiCard('Avg WO/Location', fmt.num1(d.length / Math.max(1, sorted.length)), 'Over 6 months', 'var(--ink-200)')}
+    </div>
+
+    <div class="glass panel-resp panel-rise" style="border-radius:12px; margin-bottom:1.5rem;">
+      ${panelHeader('Cost by location', 'Top 15 locations by total maintenance spend', 'Inc GST')}
+      <div id="chart_loccost" class="chart-h-lg" style="height:420px;"></div>
+    </div>
+
+    <div class="glass panel-resp panel-rise" style="border-radius:12px;">
+      ${panelHeader('Full breakdown', 'All locations with WO volume and cost', '')}
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1rem;">
+        <input type="text" id="locSearch" placeholder="Search location…" style="min-width:0; width:200px; max-width:100%;" />
+        <button onclick="exportLocCSV()" class="btn-ghost">EXPORT CSV</button>
+      </div>
+      <div class="table-scroll" style="max-height:600px; overflow-y:auto;">
+        <table class="lux-table" id="locTable">
+          <thead><tr><th>Location</th><th>Description</th><th>WOs</th><th>CM</th><th>PM</th><th>CM %</th><th>Cost</th></tr></thead>
+          <tbody>
+            ${sorted.map(([loc, s]) => `<tr>
+              <td class="font-mono" style="color: var(--champagne); white-space:nowrap;">${loc}</td>
+              <td style="font-size:11px; max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.desc || '—'}</td>
+              <td class="font-mono">${s.count}</td>
+              <td class="font-mono">${s.cm}</td>
+              <td class="font-mono">${s.pm}</td>
+              <td class="font-mono" style="color:${s.cm/Math.max(1,s.count)>0.85?'#E27A93':'var(--ink-200)'}">${fmt.pct(s.cm/Math.max(1,s.count))}</td>
+              <td class="font-mono" style="color: var(--champagne)">${s.cost > 0 ? fmt.money(s.cost) : '—'}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  // Location cost chart
+  if (topByCost.length > 0) {
+    pendingChart('chart_loccost', {
+      ...chartBaseTheme,
+      grid: { left: 130, right: 40, top: 20, bottom: 30 },
+      tooltip: { trigger: 'axis', ...tooltipStyle(), valueFormatter: v => fmt.money(v) },
+      xAxis: { type: 'value', ...axisStyle('AUD'), axisLabel: { ...axisStyle().axisLabel, formatter: v => fmt.moneyShort(v) } },
+      yAxis: { type: 'category', data: topByCost.map(([l])=>l).reverse(), ...axisStyle(), axisLabel: { ...axisStyle().axisLabel, fontSize: 10 } },
+      series: [{
+        type: 'bar', data: topByCost.map(([,v]) => Math.round(v.cost)).reverse(),
+        itemStyle: { color: { type: 'linear', x:0,y:0,x2:1,y2:0, colorStops: [{offset:0,color:'#8E7843'},{offset:1,color:'#E5C87E'}] }, borderRadius: [0,4,4,0] },
+        barWidth: '55%',
+        label: { show: true, position: 'right', color: '#F4EFE6', fontFamily: 'JetBrains Mono', fontSize: 10, formatter: p => fmt.moneyShort(p.value) }
+      }]
+    });
+  }
+
+  document.getElementById('locSearch')?.addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    document.querySelectorAll('#locTable tbody tr').forEach(tr => {
+      tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  });
+}
+
+// =============== VIEW: COST ANALYSIS ===============
+function renderCosts(c) {
+  const wa = STATE.costWithAsset;
+  const woa = STATE.costWithoutAsset;
+  const allCosts = getAllCosts();
+  const totalSpend = allCosts.reduce((s,r) => s + r.Total_Price, 0);
+  const waTotal = wa.reduce((s,r) => s + r.Total_Price, 0);
+  const woaTotal = woa.reduce((s,r) => s + r.Total_Price, 0);
+
+  // Cost distribution buckets
+  const buckets = [
+    { label: '$0–250', min: 0, max: 250 },
+    { label: '$250–500', min: 250, max: 500 },
+    { label: '$500–1K', min: 500, max: 1000 },
+    { label: '$1K–2K', min: 1000, max: 2000 },
+    { label: '$2K–3K', min: 2000, max: 3000 },
+    { label: '$3K–5K', min: 3000, max: 5000 },
+    { label: '$5K+', min: 5000, max: Infinity },
+  ];
+  const bucketCounts = buckets.map(b => allCosts.filter(r => r.Total_Price >= b.min && r.Total_Price < b.max).length);
+
+  // Top 15 costliest WOs
+  const topWOs = [...allCosts].sort((a,b) => b.Total_Price - a.Total_Price).slice(0, 15);
+
+  // Most expensive assets
+  const assetCost = {};
+  wa.forEach(r => {
+    if (!r.Asset || r.Asset === 'null') return;
+    if (!assetCost[r.Asset]) assetCost[r.Asset] = { total: 0, count: 0 };
+    assetCost[r.Asset].total += r.Total_Price;
+    assetCost[r.Asset].count++;
+  });
+  const topAssets = Object.entries(assetCost).sort((a,b)=>b[1].total-a[1].total).slice(0,12);
+
+  c.innerHTML = `
+    <div style="margin-bottom:2rem;" class="panel-rise">
+      <div class="section-eyebrow" style="margin-bottom:8px;">Economics</div>
+      <h1 class="title-hero" style="margin-bottom:8px;">Cost <em style="color: var(--champagne)">intelligence</em></h1>
+      <p style="font-size:0.875rem; max-width:42rem; color: var(--ink-300);">
+        Maintenance spend analysis — with-asset vs without-asset reconciliation, cost distribution, and high-value exposures.
+      </p>
+    </div>
+
+    <div class="grid-kpi" style="margin-bottom:1.5rem;">
+      ${kpiCard('Total Spend', fmt.moneyShort(totalSpend), `${fmt.num(allCosts.length)} costed work orders`, 'var(--champagne)')}
+      ${kpiCard('With Asset', fmt.moneyShort(waTotal), `${fmt.num(wa.length)} WOs · ${fmt.pct(waTotal/Math.max(1,totalSpend))}`, '#5BB892')}
+      ${kpiCard('Without Asset', fmt.moneyShort(woaTotal), `${fmt.num(woa.length)} WOs · ${fmt.pct(woaTotal/Math.max(1,totalSpend))}`, '#E5904F')}
+      ${kpiCard('Avg Cost', fmt.money(totalSpend/Math.max(1,allCosts.length)), 'Per work order', 'var(--ink-200)')}
+    </div>
+
+    <div class="grid-2-1" style="margin-bottom:1.5rem;">
+      <div class="glass panel-resp panel-rise" style="border-radius:12px;">
+        ${panelHeader('Distribution', 'WO cost buckets', 'Inc GST')}
+        <div id="chart_costdist" class="chart-h-lg"></div>
+      </div>
+      <div class="glass panel-resp panel-rise" style="border-radius:12px;">
+        ${panelHeader('Split', 'With vs Without asset', '')}
+        <div id="chart_costsplit" class="chart-h-lg"></div>
+      </div>
+    </div>
+
+    <div class="grid-2-1" style="margin-bottom:1.5rem;">
+      <div class="glass panel-resp panel-rise" style="border-radius:12px;">
+        ${panelHeader('Top assets', 'Highest cumulative maintenance cost', 'By asset ID')}
+        <div id="chart_topassets" class="chart-h-lg" style="height:400px;"></div>
+      </div>
+      <div class="glass panel-resp panel-rise" style="border-radius:12px;">
+        ${panelHeader('Asset detail', 'Cost & frequency', '')}
+        <div class="table-scroll" style="max-height:400px; overflow-y:auto;">
+          <table class="lux-table">
+            <thead><tr><th>Asset</th><th>WOs</th><th>Total Cost</th><th>Avg/WO</th></tr></thead>
+            <tbody>
+              ${topAssets.map(([a,s]) => `<tr>
+                <td class="font-mono" style="color: var(--champagne)">${a}</td>
+                <td class="font-mono">${s.count}</td>
+                <td class="font-mono" style="color: var(--champagne)">${fmt.money(s.total)}</td>
+                <td class="font-mono">${fmt.money(s.total/s.count)}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="glass panel-resp panel-rise" style="border-radius:12px;">
+      ${panelHeader('Top 15 costliest work orders', 'Individual WO spend', '')}
+      <div class="table-scroll">
+        <table class="lux-table">
+          <thead><tr><th>WO</th><th>Description</th><th>Location</th><th>Asset</th><th>Cost</th></tr></thead>
+          <tbody>
+            ${topWOs.map(w => `<tr>
+              <td class="font-mono" style="white-space:nowrap;">${w.Work_Order}</td>
+              <td style="font-size:12px; max-width:350px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${w.Description}</td>
+              <td class="font-mono" style="white-space:nowrap;">${w.Location_Code}</td>
+              <td class="font-mono" style="color: var(--champagne)">${w.Asset && w.Asset !== 'null' && w.Asset !== 'Missing' ? w.Asset : '—'}</td>
+              <td class="font-mono" style="color: var(--champagne); white-space:nowrap;">${fmt.money(w.Total_Price)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  // Cost distribution
+  pendingChart('chart_costdist', {
+    ...chartBaseTheme,
+    tooltip: { trigger: 'axis', ...tooltipStyle() },
+    xAxis: { type: 'category', data: buckets.map(b=>b.label), ...axisStyle(), axisLabel: { ...axisStyle().axisLabel, rotate: 30 } },
+    yAxis: { type: 'value', ...axisStyle('WOs') },
+    series: [{ type: 'bar', data: bucketCounts.map((v,i) => ({
+      value: v, itemStyle: { color: CHART_COLORS[i], borderRadius: [4,4,0,0] }
+    })), barWidth: '50%',
+      label: { show: true, position: 'top', color: '#F4EFE6', fontFamily: 'Manrope', fontWeight: 500 }
+    }]
+  });
+
+  // With/Without split
+  pendingChart('chart_costsplit', {
+    ...chartBaseTheme, tooltip: { trigger: 'item', ...tooltipStyle(), valueFormatter: v => fmt.money(v) },
+    series: [{ type: 'pie', radius: ['45%','75%'],
+      itemStyle: { borderColor: '#0B1A35', borderWidth: 3 },
+      label: { color: '#A8B8D6', fontSize: 11, fontFamily: 'Manrope', formatter: '{b}\n{d}%' },
+      data: [
+        { name: 'With Asset', value: Math.round(waTotal), itemStyle: { color: '#5BB892' } },
+        { name: 'Without Asset', value: Math.round(woaTotal), itemStyle: { color: '#E5904F' } },
+      ]
+    }]
+  });
+
+  // Top assets chart
+  if (topAssets.length > 0) {
+    pendingChart('chart_topassets', {
+      ...chartBaseTheme,
+      grid: { left: 80, right: 40, top: 20, bottom: 30 },
+      tooltip: { trigger: 'axis', ...tooltipStyle(), valueFormatter: v => fmt.money(v) },
+      xAxis: { type: 'value', ...axisStyle('AUD'), axisLabel: { ...axisStyle().axisLabel, formatter: v => fmt.moneyShort(v) } },
+      yAxis: { type: 'category', data: topAssets.map(([a])=>a).reverse(), ...axisStyle() },
+      series: [{ type: 'bar', data: topAssets.map(([,v])=>Math.round(v.total)).reverse(),
+        itemStyle: { color: { type:'linear',x:0,y:0,x2:1,y2:0,colorStops:[{offset:0,color:'#2D7A5F'},{offset:1,color:'#5BB892'}]}, borderRadius: [0,4,4,0] },
+        barWidth: '55%',
+        label: { show: true, position: 'right', color: '#F4EFE6', fontFamily: 'JetBrains Mono', fontSize: 10, formatter: p => fmt.moneyShort(p.value) }
+      }]
+    });
+  }
+}
+
+// =============== VIEW: EQUIPMENT ===============
+function renderEquipment(c) {
+  const d = STATE.wo;
+  const allCosts = getAllCosts();
+
+  // Equipment from descriptions
+  const equipTypes = [
+    {kw:'oven', label:'Ovens / Combi Ovens'},
+    {kw:'door', label:'Doors & Seals'},
+    {kw:'hot box', label:'Hot Boxes'},
+    {kw:'steam', label:'Steam Equipment'},
+    {kw:'ice', label:'Ice Machines'},
+    {kw:'leak', label:'Leak Issues'},
+    {kw:'microwave', label:'Microwaves'},
+    {kw:'dishwasher', label:'Dishwashers'},
+    {kw:'kettle', label:'Kettles'},
+    {kw:'fryer', label:'Fryers'},
+    {kw:'grill', label:'Grills'},
+    {kw:'fan', label:'Fans / Ventilation'},
+    {kw:'pump', label:'Pumps'},
+    {kw:'fridge', label:'Fridges'},
+    {kw:'freezer', label:'Freezers'},
+    {kw:'motor', label:'Motors'},
+  ];
+
+  const eqStats = equipTypes.map(({kw, label}) => {
+    const woRows = d.filter(r => r.Description && r.Description.toLowerCase().includes(kw));
+    const costRows = allCosts.filter(r => r.Description && r.Description.toLowerCase().includes(kw));
+    const totalCost = costRows.reduce((s,r)=>s+r.Total_Price, 0);
+    return { label, kw, count: woRows.length, cost: totalCost };
+  }).filter(s => s.count > 0).sort((a,b)=>b.count-a.count);
+
+  // WO listing
+  const woList = d.slice().sort((a,b) => (b.Reported_Date||0) - (a.Reported_Date||0));
+
+  c.innerHTML = `
+    <div style="margin-bottom:2rem;" class="panel-rise">
+      <div class="section-eyebrow" style="margin-bottom:8px;">Equipment</div>
+      <h1 class="title-hero" style="margin-bottom:8px;">Equipment <em style="color: var(--champagne)">breakdown</em></h1>
+      <p style="font-size:0.875rem; max-width:42rem; color: var(--ink-300);">
+        Equipment type analysis extracted from work order descriptions — what's breaking, what it costs.
+      </p>
+    </div>
+
+    <div class="grid-2-1" style="margin-bottom:1.5rem;">
+      <div class="glass panel-resp panel-rise" style="border-radius:12px;">
+        ${panelHeader('Equipment types', 'WO count by equipment category', 'From descriptions')}
+        <div id="chart_eqcount" class="chart-h-lg" style="height:420px;"></div>
+      </div>
+      <div class="glass panel-resp panel-rise" style="border-radius:12px;">
+        ${panelHeader('Cost exposure', 'Spend by equipment type', 'Inc GST')}
+        <div id="chart_eqcost" class="chart-h-lg" style="height:420px;"></div>
+      </div>
+    </div>
+
+    <div class="glass panel-resp panel-rise" style="border-radius:12px; margin-bottom:1.5rem;">
+      ${panelHeader('Equipment summary', 'Count & cost breakdown', '')}
+      <div class="table-scroll">
+        <table class="lux-table">
+          <thead><tr><th>Equipment</th><th>WO Count</th><th>% of Total</th><th>Total Cost</th><th>Avg Cost</th><th>Volume</th></tr></thead>
+          <tbody>
+            ${eqStats.map(s => `<tr>
+              <td class="font-display" style="color: var(--paper); font-size:14px;">${s.label}</td>
+              <td class="font-mono">${s.count}</td>
+              <td class="font-mono">${fmt.pct(s.count/d.length)}</td>
+              <td class="font-mono" style="color: var(--champagne)">${s.cost > 0 ? fmt.money(s.cost) : '—'}</td>
+              <td class="font-mono">${s.cost > 0 ? fmt.money(s.cost/s.count) : '—'}</td>
+              <td><div style="width:120px; height:6px; background: rgba(168,184,214,0.1); border-radius:3px; position:relative;">
+                <div style="position:absolute;left:0;top:0;height:100%;width:${s.count/eqStats[0].count*100}%;background:linear-gradient(90deg,var(--champagne),var(--champagne-bright));border-radius:3px;"></div>
+              </div></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="glass panel-resp panel-rise" style="border-radius:12px;">
+      <div class="panel-header-resp">
+        <div style="min-width:0;">
+          <div class="section-eyebrow" style="margin-bottom:4px;">Detail</div>
+          <h2 class="title-section">Work order listing</h2>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <input type="text" id="woSearch" placeholder="Search WO, description…" style="min-width:0; width:220px; max-width:100%;" />
+        </div>
+      </div>
+      <div class="table-scroll" style="max-height:600px; overflow-y:auto;">
+        <table class="lux-table" id="woTable">
+          <thead><tr><th>WO</th><th>Date</th><th>Location</th><th>Type</th><th>Priority</th><th>Status</th><th>Description</th></tr></thead>
+          <tbody>
+            ${woList.slice(0,200).map(w => {
+              const prioColors = {1:'#E27A93',2:'#E5904F',3:'#8FA8DA',4:'#5BB892',5:'#C9A961'};
+              const statusColors = {'CLOSE':'badge-success','COMPLETE':'badge-success','WASSIGN':'badge-warn','CANCELLED':'badge-danger','WREVIEW':'badge-neutral','WACTION':'badge-warn'};
+              return `<tr>
+                <td class="font-mono" style="white-space:nowrap; color: var(--champagne);">${w.Work_Order}</td>
+                <td class="font-mono" style="white-space:nowrap;">${fmt.date(w.Reported_Date)}</td>
+                <td style="white-space:nowrap;">${w.Location}</td>
+                <td><span class="badge ${w.Work_Type==='CM'?'badge-warn':'badge-success'}">${w.Work_Type}</span></td>
+                <td><span class="font-mono" style="color:${prioColors[w.Priority]||'var(--ink-200)'}">P${w.Priority}</span></td>
+                <td><span class="badge ${statusColors[w.Status]||'badge-neutral'}">${w.Status}</span></td>
+                <td style="font-size:11px; max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${w.Description}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  // Equipment count chart
+  pendingChart('chart_eqcount', {
+    ...chartBaseTheme,
+    grid: { left: 140, right: 40, top: 10, bottom: 20 },
+    tooltip: { trigger: 'axis', ...tooltipStyle() },
+    xAxis: { type: 'value', ...axisStyle('WOs') },
+    yAxis: { type: 'category', data: eqStats.map(s=>s.label).reverse(), ...axisStyle(), axisLabel: { ...axisStyle().axisLabel, fontSize: 10 } },
+    series: [{ type: 'bar', data: eqStats.map(s=>s.count).reverse(),
+      itemStyle: { color: '#C9A961', borderRadius: [0,4,4,0] }, barWidth: '55%',
+      label: { show: true, position: 'right', color: '#F4EFE6', fontFamily: 'Manrope', fontWeight: 500, fontSize: 10 }
+    }]
+  });
+
+  // Equipment cost chart
+  const eqWithCost = eqStats.filter(s=>s.cost>0).sort((a,b)=>b.cost-a.cost);
+  pendingChart('chart_eqcost', {
+    ...chartBaseTheme,
+    grid: { left: 140, right: 50, top: 10, bottom: 20 },
+    tooltip: { trigger: 'axis', ...tooltipStyle(), valueFormatter: v => fmt.money(v) },
+    xAxis: { type: 'value', ...axisStyle('AUD'), axisLabel: { ...axisStyle().axisLabel, formatter: v => fmt.moneyShort(v) } },
+    yAxis: { type: 'category', data: eqWithCost.map(s=>s.label).reverse(), ...axisStyle(), axisLabel: { ...axisStyle().axisLabel, fontSize: 10 } },
+    series: [{ type: 'bar', data: eqWithCost.map(s=>Math.round(s.cost)).reverse(),
+      itemStyle: { color: { type:'linear',x:0,y:0,x2:1,y2:0,colorStops:[{offset:0,color:'#8B2840'},{offset:1,color:'#E27A93'}]}, borderRadius: [0,4,4,0] }, barWidth: '55%',
+      label: { show: true, position: 'right', color: '#F4EFE6', fontFamily: 'JetBrains Mono', fontSize: 10, formatter: p => fmt.moneyShort(p.value) }
+    }]
+  });
+
+  document.getElementById('woSearch')?.addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    document.querySelectorAll('#woTable tbody tr').forEach(tr => {
+      tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  });
+}
+
+// =============== EXPORT ===============
+function exportLocCSV() {
+  const d = STATE.wo;
+  const allCosts = getAllCosts();
+  const locStats = {};
+  d.forEach(r => {
+    if (!r.Location) return;
+    if (!locStats[r.Location]) locStats[r.Location] = { count: 0, cm: 0, pm: 0, desc: r.Location_Description, cost: 0 };
+    locStats[r.Location].count++;
+    if (r.Work_Type === 'CM') locStats[r.Location].cm++;
+    if (r.Work_Type === 'PM') locStats[r.Location].pm++;
+  });
+  const costByLoc = {};
+  allCosts.forEach(co => { costByLoc[co.Location_Code] = (costByLoc[co.Location_Code]||0) + co.Total_Price; });
+  Object.keys(locStats).forEach(loc => { locStats[loc].cost = costByLoc[loc] || 0; });
+
+  const rows = Object.entries(locStats).sort((a,b)=>b[1].count-a[1].count);
+  const csv = 'Location,Description,WOs,CM,PM,Cost\n' + rows.map(([loc,s]) =>
+    `"${loc}","${(s.desc||'').replace(/"/g,'""')}",${s.count},${s.cm},${s.pm},${s.cost.toFixed(2)}`
+  ).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'location_breakdown.csv'; a.click();
+}
+</script>
+</body>
+</html>
